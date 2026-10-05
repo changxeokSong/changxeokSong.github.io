@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Learned Attenuation · Changseok Song</title>
+  <meta name="description" content="ICLR 2027 submission: does a learned attenuation map beat fixed JND in invisible image watermarking once distortion is matched?">
+  <link rel="alternate" hreflang="ko" href="learned-attenuation.ko.html">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+  <link rel="stylesheet" href="../assets/style.css">
+  <script>try{var t=localStorage.getItem("theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body>
+  <header class="site-head">
+    <div class="wrap">
+      <a class="brand" href="../">Changseok Song</a>
+      <nav class="nav" aria-label="Sections">
+        <a href="#question">Question</a>
+        <a href="#method">Method</a>
+        <a href="#findings">Findings</a>
+      </nav>
+      <div class="head-tools">
+        <a class="chip-btn" href="learned-attenuation.ko.html" hreflang="ko" lang="ko">한국어</a>
+        <button class="chip-btn theme-btn" type="button" aria-label="Toggle dark mode">
+          <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+          <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="p-head">
+      <div class="wrap">
+        <a class="back" href="../#publications">← Home</a>
+        <div class="label">ICLR 2027 · Under review · First author</div>
+        <h1>From Fixed JND to Learned Attenuation in Invisible Image Watermarking</h1>
+        <p class="meta"><span class="me">Changseok Song</span>, Hyeongbin Mun, Yoon Ki Cho, Jungwoo Kim, Geonhee Lee, Jongho Nang · Sogang University</p>
+        <div class="links">
+          <a href="https://openreview.net/forum?id=gYOV86mpFu">OpenReview <span class="arr">↗</span></a>
+        </div>
+        <div class="kpis">
+          <div class="kpi"><div class="v">+3.81<small>pp</small></div><div class="k">bit accuracy, same coefficient</div></div>
+          <div class="kpi"><div class="v">−5.37<small>dB</small></div><div class="k">PSNR cost of the base learned map</div></div>
+          <div class="kpi"><div class="v">+2.05<small>dB</small></div><div class="k">recovered by SAA + LPIPS</div></div>
+          <div class="kpi"><div class="v">0.36–0.38<small>pp</small></div><div class="k">fixed JND lead at matched PSNR</div></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="wrap">
+      <section class="sec" id="question">
+        <div class="sec-label"><span class="label">01</span><h2>Question</h2></div>
+        <div class="sec-body">
+          <ul class="list">
+            <li>The attenuation map sets the per-pixel strength of the watermark residual</li>
+            <li>Does a <b>learned</b> map beat the <b>fixed JND</b> map on the quality–robustness trade-off?</li>
+            <li>Does the gain survive when <b>distortion (PSNR)</b>, not the embedding coefficient, is held fixed?</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="sec" id="method">
+        <div class="sec-label"><span class="label">02</span><h2>Method</h2></div>
+        <div class="sec-body">
+          <figure>
+            <div class="frame"><img src="../assets/img/wm_overview.webp" alt="Pipeline where a fixed JND or learned attenuation map scales the watermark residual per pixel" width="2460" height="1043" loading="lazy"></div>
+            <figcaption>Overview — the frozen Pixel Seal embedder's residual w is scaled by M(x): fixed JND(x) or learned Aφ(x)</figcaption>
+          </figure>
+          <ul class="list">
+            <li>Pixel Seal embedder and extractor <b>frozen</b>; a U-Net predicts the attenuation map</li>
+            <li><b>SAA</b> (Shape-Aligned Attenuation): aligns the mean-normalized learned map with the JND map</li>
+            <li>Optional <b>LPIPS</b> perceptual loss</li>
+            <li>Attack: combined JPEG + crop + brightness</li>
+            <li>Comparison at matched coefficient, matched PSNR, and matched robustness</li>
+            <li>SA-1B (n = 1,000) · 3 seeds · paired bootstrap CIs</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="sec" id="findings">
+        <div class="sec-label"><span class="label">03</span><h2>Findings</h2></div>
+        <div class="sec-body">
+          <figure>
+            <div class="frame"><img src="../assets/img/wm_isopsnr.webp" alt="Bit accuracy and LPIPS of five attenuation conditions at matched PSNR" width="2400" height="946" loading="lazy"></div>
+            <figcaption>Comparison at matched PSNR (SA-1B, n=1000) — (a) combined-attack bit accuracy, (b) LPIPS. Native = fixed JND</figcaption>
+          </figure>
+          <div class="tbl">
+            <table>
+              <thead><tr><th class="l">Comparison</th><th class="l">Result</th></tr></thead>
+              <tbody>
+                <tr><td class="l">Same coefficient</td><td class="l">Base learned map: bit accuracy <b>+3.81 pp</b>, PSNR <b>−5.37 dB</b></td></tr>
+                <tr><td class="l">+ LPIPS + SAA</td><td class="l">Recovers <b>+2.05 dB</b> at a 0.31 pp accuracy cost</td></tr>
+                <tr class="best"><td class="l">Matched PSNR</td><td class="l">Advantage disappears; fixed JND leads by <b>0.36–0.38 pp</b> (all but the highest target)</td></tr>
+                <tr><td class="l">Among learned maps</td><td class="l">Robustness differences come from SAA (+0.55–2.59 pp)</td></tr>
+                <tr><td class="l">Matched robustness</td><td class="l">Learned maps' LPIPS edge largely vanishes; fixed JND needs the least distortion</td></tr>
+                <tr><td class="l">MaskWM · WAM · VideoSeal</td><td class="l">Matched PSNR narrows the JPEG gap to <b>&lt; 1.2 pp</b> (learned slightly ahead on VideoSeal)</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout"><b>Takeaway.</b> With the backbone frozen, learned attenuation beats fixed JND neither in robustness at equal distortion nor clearly in quality at equal robustness — single-coefficient comparisons overstate its benefit.</div>
+        </div>
+      </section>
+
+      <section class="sec" id="stack">
+        <div class="sec-label"><span class="label">04</span><h2>Stack</h2></div>
+        <div class="sec-body">
+          <div class="tags"><span>PyTorch</span><span>U-Net</span><span>LPIPS</span><span>Pixel Seal</span><span>MaskWM</span><span>WAM</span><span>VideoSeal</span><span>Multi-GPU</span><span>Bootstrap CI</span></div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-foot">
+    <div class="wrap">
+      <a href="../">← Changseok Song</a>
+      <a href="learned-attenuation.ko.html" lang="ko">한국어</a>
+    </div>
+  </footer>
+  <script src="../assets/site.js" defer></script>
+</body>
+</html>

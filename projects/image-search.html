@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Korean CLIP Image Search · Changseok Song</title>
+  <meta name="description" content="KCC 2026 poster: a multi-modal image search system based on a Korean-specific CLIP model. 1.02M image–Korean caption pairs, 7.8 ms GPU in-memory search.">
+  <link rel="alternate" hreflang="ko" href="image-search.ko.html">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+  <link rel="stylesheet" href="../assets/style.css">
+  <script>try{var t=localStorage.getItem("theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body>
+  <header class="site-head">
+    <div class="wrap">
+      <a class="brand" href="../">Changseok Song</a>
+      <nav class="nav" aria-label="Sections">
+        <a href="#data">Data</a>
+        <a href="#model">Model</a>
+        <a href="#search">Search</a>
+        <a href="#analysis">Analysis</a>
+        <a href="#beyond">Beyond</a>
+      </nav>
+      <div class="head-tools">
+        <a class="chip-btn" href="image-search.ko.html" hreflang="ko" lang="ko">한국어</a>
+        <button class="chip-btn theme-btn" type="button" aria-label="Toggle dark mode">
+          <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+          <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="p-head">
+      <div class="wrap">
+        <a class="back" href="../#projects">← Home</a>
+        <div class="label">KCC 2026 · Poster · First author</div>
+        <h1>Design and Implementation of a Multi-modal Image Search System based on Korean-specific CLIP Model</h1>
+        <p class="meta"><span class="me">Changseok Song</span>, Jeongwoo Kim, Yoonki Cho, Hyeongbin Mun, Haeun Lee, JongHo Nang · Dept. of CSE, Sogang University</p>
+        <p class="meta">Korea Computer Congress (KCC 2026), Jeju · paper in Korean · 2025.08 – 2026.06</p>
+        <div class="links">
+          <a class="primary" href="../assets/papers/kcc2026_song.pdf">Paper (PDF)</a>
+          <a href="https://kcc2026.kiise.or.kr/Proceedings/Home.asp">Proceedings <span class="arr">↗</span></a>
+        </div>
+        <div class="kpis">
+          <div class="kpi"><div class="v">1,028,223</div><div class="k">image–Korean caption pairs</div></div>
+          <div class="kpi"><div class="v">7.8<small>ms</small></div><div class="k">average search latency (RTX 3090)</div></div>
+          <div class="kpi"><div class="v">~10<small>×</small></div><div class="k">vs. translation-based AlignCLIP</div></div>
+          <div class="kpi"><div class="v">3.0<small>GB</small></div><div class="k">feature vectors resident on GPU</div></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="wrap">
+      <section class="sec" id="overview">
+        <div class="sec-label"><span class="label">01</span><h2>Overview</h2></div>
+        <div class="sec-body">
+          <ul class="list">
+            <li><b>Problem</b>: metadata search ignores image content; English CLIP + live translation adds latency and loses meaning</li>
+            <li><b>Goal</b>: real-time search over 1M images that takes Korean queries directly, with automatically built training data</li>
+            <li><b>Result</b>: 7.8 ms average search, category keywords in Korean queries are recognized</li>
+            <li><b>System</b>: Django REST API (requests) + PyTorch GPU module (retrieval)</li>
+          </ul>
+          <figure>
+            <div class="frame"><img src="../assets/img/kcc_pipeline.webp" alt="System pipeline: data construction, model fine-tuning, and online search" width="1761" height="709" loading="lazy"></div>
+            <figcaption>Fig. 1 — System pipeline: (a) proposed, (b) AlignCLIP baseline with translation</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="sec" id="data">
+        <div class="sec-label"><span class="label">02</span><h2>Dataset</h2></div>
+        <div class="sec-body">
+          <div class="pipe">
+            <div class="step"><span class="n">01</span><b>Category-prompted captioning</b><span>BLIP-large</span></div>
+            <div class="step"><span class="n">02</span><b>Korean translation</b><span>iris-7b (LLM)</span></div>
+            <div class="step"><span class="n">03</span><b>Rule-based filtering</b><span>298 bad samples removed</span></div>
+            <div class="step"><span class="n">04</span><b>Image–caption pairs</b><span>1,028,223 pairs (JSON)</span></div>
+          </div>
+          <ul class="list">
+            <li>Per-category prefix mapping: <i>“a photograph of”</i> (photo), <i>“an illustration of”</i> (illust), …</li>
+            <li>Purpose: consistent embeddings within a category + category keywords in queries (“photo”, “template”) reflected in results</li>
+            <li>English captions translated to Korean with <code>davidkim205/iris-7b</code></li>
+            <li>Filter rules: repeated tokens · abnormal special characters · Hangul-ratio threshold</li>
+            <li>1,028,521 real-world industrial images → 293 translation failures + 5 caption failures removed</li>
+          </ul>
+          <div class="chart" role="img" aria-label="Images per category: photo 345,362, illust 304,631, template 181,228, editimage 176,199, icon 20,803">
+            <div class="chart-title">Images per category</div>
+            <div class="bar-row"><span>photo</span><div class="bar-track"><div class="bar-fill on" style="width:100%"></div></div><span class="num">345,362</span></div>
+            <div class="bar-row"><span>illust</span><div class="bar-track"><div class="bar-fill" style="width:88.2%"></div></div><span class="num">304,631</span></div>
+            <div class="bar-row"><span>template</span><div class="bar-track"><div class="bar-fill" style="width:52.5%"></div></div><span class="num">181,228</span></div>
+            <div class="bar-row"><span>editimage</span><div class="bar-track"><div class="bar-fill" style="width:51.0%"></div></div><span class="num">176,199</span></div>
+            <div class="bar-row"><span>icon</span><div class="bar-track"><div class="bar-fill" style="width:6.0%"></div></div><span class="num">20,803</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="sec" id="model">
+        <div class="sec-label"><span class="label">03</span><h2>Fine-tuning</h2></div>
+        <div class="sec-body">
+          <ul class="list">
+            <li>Pre-trained model: <code>Bingsu/clip-vit-large-patch14-ko</code> (Korean CLIP via knowledge distillation)</li>
+            <li>Limitation: strong in Korean but weak on industrial-domain vocabulary and visual detail</li>
+            <li>Image–caption contrastive learning, training both image and text encoders</li>
+            <li>Image and caption features extracted → L2-normalized → stored in H5 with category labels</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="sec" id="search">
+        <div class="sec-label"><span class="label">04</span><h2>Search</h2></div>
+        <div class="sec-body">
+          <div class="pipe">
+            <div class="step"><span class="n">01</span><b>Korean query</b><span>no translation</span></div>
+            <div class="step"><span class="n">02</span><b>Text encoder</b><span>fine-tuned model, 768-d</span></div>
+            <div class="step"><span class="n">03</span><b>Cosine similarity</b><span>torch.mv over the full DB</span></div>
+            <div class="step"><span class="n">04</span><b>Top-K</b><span>optional category filter</span></div>
+          </div>
+          <ul class="list">
+            <li>GPU in-memory: 1,028,223 × 2 (image + caption) × 768 × FP16 ≈ <b>3.0 GB</b></li>
+            <li>Loaded once as PyTorch tensors at startup → no disk I/O at query time</li>
+            <li>Two modes: (1) image search · (2) caption search</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="sec" id="analysis">
+        <div class="sec-label"><span class="label">05</span><h2>Analysis</h2></div>
+        <div class="sec-body">
+          <h3>Latency (RTX 3090, mean warm latency over 10 runs per query)</h3>
+          <div class="tbl">
+            <table>
+              <thead><tr><th>Model</th><th>Translate</th><th>Encode</th><th>Search</th><th>Total (ms)</th></tr></thead>
+              <tbody>
+                <tr><td>AlignCLIP (FT)</td><td>69.0</td><td>4.9</td><td>1.9</td><td>75.8</td></tr>
+                <tr class="best"><td><b>Ours</b></td><td>–</td><td>5.9</td><td>1.9</td><td><span class="top">7.8</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="chart" role="img" aria-label="Total latency: Ours 7.8 ms, AlignCLIP 75.8 ms">
+            <div class="chart-title">Latency by stage · 0–80 ms</div>
+            <div class="bar-row"><span>Ours</span><div class="stack"><i class="c2" style="width:7.4%"></i><i class="c3" style="width:2.4%"></i></div><span class="num">7.8</span></div>
+            <div class="bar-row"><span>AlignCLIP</span><div class="stack"><i class="c1" style="width:86.3%"></i><i class="c2" style="width:6.1%"></i><i class="c3" style="width:2.4%"></i></div><span class="num">75.8</span></div>
+            <div class="legend"><span><i class="c1"></i>Translate</span><span><i class="c2"></i>Encode</span><span><i class="c3"></i>Search (~1.02M images)</span></div>
+          </div>
+          <ul class="list">
+            <li>Removing translation → <b>~10× faster</b>; translation is 91% of the baseline's latency</li>
+          </ul>
+          <h3>Retrieval quality (qualitative)</h3>
+          <figure>
+            <div class="frame"><img src="../assets/img/kcc_qualitative.webp" alt="Top-5 results of AlignCLIP and the proposed model for three queries" width="1483" height="916" loading="lazy"></div>
+            <figcaption>Fig. 3 — Qualitative comparison: first two queries test meaning preservation, the last tests category awareness (red AlignCLIP, green Ours)</figcaption>
+          </figure>
+          <ul class="list">
+            <li><b>Meaning preserved</b> — “a person lying with a dog”: Ours keeps the relation between subjects; AlignCLIP's translation fragments the query into word-level attributes</li>
+            <li><b>Category-aware</b> — “illustration of the sun setting over the sea horizon”: Ours returns sunset illustrations; AlignCLIP distorts “setting sun” and drops “illustration”</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="sec" id="beyond">
+        <div class="sec-label"><span class="label">06</span><h2>Beyond the paper</h2></div>
+        <div class="sec-body">
+          <h3>Training strategy comparison</h3>
+          <ul class="list">
+            <li>Setup: LR 5e-6 · batch 32 · 10 epochs · weight decay 0.2 · fixed temperature 0.07 · 9:1 train/val split</li>
+            <li>Evaluation: 100K pairs sampled from the full data by category ratio; Recall@K over all 100K candidates</li>
+            <li>The evaluation set is not separated from training data → read as a <b>relative comparison of strategies</b>, not absolute accuracy</li>
+          </ul>
+          <div class="chart" role="img" aria-label="Mean R@1: Baseline 54.69, Hard Negative 54.12, Multi-task 50.97, All Combined 45.69">
+            <div class="chart-title">Mean R@1 (%) · 0–60</div>
+            <div class="bar-row"><span>Baseline</span><div class="bar-track"><div class="bar-fill on" style="width:91.2%"></div></div><span class="num">54.69</span></div>
+            <div class="bar-row"><span>Hard Negative</span><div class="bar-track"><div class="bar-fill" style="width:90.2%"></div></div><span class="num">54.12</span></div>
+            <div class="bar-row"><span>Multi-task</span><div class="bar-track"><div class="bar-fill" style="width:85.0%"></div></div><span class="num">50.97</span></div>
+            <div class="bar-row"><span>All Combined</span><div class="bar-track"><div class="bar-fill" style="width:76.2%"></div></div><span class="num">45.69</span></div>
+          </div>
+          <div class="tbl">
+            <table>
+              <thead><tr><th>Model</th><th>I2T R@1</th><th>I2T R@10</th><th>T2I R@1</th><th>T2I R@10</th><th>Modality gap ↓</th></tr></thead>
+              <tbody>
+                <tr class="best"><td>Baseline</td><td><span class="top">53.51</span></td><td><span class="top">89.46</span></td><td><span class="top">55.86</span></td><td><span class="top">90.44</span></td><td>0.921</td></tr>
+                <tr><td>Hard Negative</td><td>53.11</td><td>89.12</td><td>55.14</td><td>90.02</td><td><span class="top">0.772</span></td></tr>
+                <tr><td>Multi-task</td><td>49.82</td><td>86.39</td><td>52.11</td><td>87.36</td><td>1.206</td></tr>
+                <tr><td>All Combined</td><td>47.18</td><td>83.94</td><td>44.19</td><td>82.38</td><td>1.010</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <ul class="list">
+            <li>Hard Negative: same-category negatives weighted 2× · Multi-task: auxiliary category classification (λ = 0.1) · All Combined: both + text prefix</li>
+            <li>Combining techniques hurts (All Combined <b>−9.0 pp</b>); Hard Negative cuts the modality gap by <b>16%</b></li>
+            <li>R@1 by category: editimage 68.7 · icon 58.8 · illust 58.7 · template 52.2 · photo 46.7</li>
+          </ul>
+          <figure class="narrow">
+            <div class="frame"><img src="../assets/img/pca_base.jpg" alt="3D PCA of the fine-tuned embeddings: categories form separate clusters and images overlap their captions" loading="lazy" width="1400" height="1450"></div>
+            <figcaption>3D PCA of embeddings (10,000 per category) · clusters by category, images (●) aligned with text (×)</figcaption>
+          </figure>
+          <h3>Vector store evolution</h3>
+          <ul class="list">
+            <li>Faiss (memory only, rebuilt on restart) → Qdrant (HNSW, persistent, metadata filters) → <b>GPU in-memory exact search</b></li>
+            <li>1.9 ms Top-K over 1M vectors with no approximation</li>
+          </ul>
+          <h3>Groundwork for follow-up: negation</h3>
+          <ul class="list">
+            <li>CLIP tends to return the negated object for queries like “a mountain without snow”</li>
+            <li>Generated and filtered ~<b>256K</b> negated captions with Qwen2.5-7B-Instruct + vLLM (<i>“… with no passengers”</i>)</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="sec" id="stack">
+        <div class="sec-label"><span class="label">07</span><h2>Stack</h2></div>
+        <div class="sec-body">
+          <div class="tags">
+            <span>PyTorch</span><span>Transformers</span><span>CLIP ViT-L/14</span><span>BLIP</span><span>iris-7b</span><span>Qwen</span><span>vLLM</span>
+            <span>H5</span><span>Django REST</span><span>Vue</span><span>Redis</span><span>Qdrant</span><span>Faiss</span><span>Docker</span>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-foot">
+    <div class="wrap">
+      <a href="../">← Changseok Song</a>
+      <a href="image-search.ko.html" lang="ko">한국어</a>
+    </div>
+  </footer>
+  <script src="../assets/site.js" defer></script>
+</body>
+</html>

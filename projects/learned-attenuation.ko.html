@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>학습형 감쇠 맵 · 송창석</title>
+  <meta name="description" content="ICLR 2027 제출: 비가시 이미지 워터마킹에서 왜곡을 맞춰 비교해도 학습형 감쇠 맵이 고정 JND보다 나은가?">
+  <link rel="alternate" hreflang="en" href="learned-attenuation.html">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+  <link rel="stylesheet" href="../assets/style.css">
+  <script>try{var t=localStorage.getItem("theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body>
+  <header class="site-head">
+    <div class="wrap">
+      <a class="brand" href="../ko.html">송창석</a>
+      <nav class="nav" aria-label="섹션">
+        <a href="#question">Question</a>
+        <a href="#method">Method</a>
+        <a href="#findings">Findings</a>
+      </nav>
+      <div class="head-tools">
+        <a class="chip-btn" href="learned-attenuation.html" hreflang="en" lang="en">English</a>
+        <button class="chip-btn theme-btn" type="button" aria-label="다크 모드 전환">
+          <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+          <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="p-head">
+      <div class="wrap">
+        <a class="back" href="../ko.html#publications">← 홈</a>
+        <div class="label">ICLR 2027 · 심사 중 · 1저자</div>
+        <h1>From Fixed JND to Learned Attenuation in Invisible Image Watermarking</h1>
+        <p class="meta"><span class="me">Changseok Song</span>, Hyeongbin Mun, Yoon Ki Cho, Jungwoo Kim, Geonhee Lee, Jongho Nang · 서강대학교</p>
+        <div class="links">
+          <a href="https://openreview.net/forum?id=gYOV86mpFu">OpenReview <span class="arr">↗</span></a>
+        </div>
+        <div class="kpis">
+          <div class="kpi"><div class="v">+3.81<small>pp</small></div><div class="k">비트 정확도, 같은 삽입 계수</div></div>
+          <div class="kpi"><div class="v">−5.37<small>dB</small></div><div class="k">기본 학습 맵의 PSNR 손실</div></div>
+          <div class="kpi"><div class="v">+2.05<small>dB</small></div><div class="k">SAA + LPIPS로 회복</div></div>
+          <div class="kpi"><div class="v">0.36–0.38<small>pp</small></div><div class="k">PSNR 일치 시 고정 JND 우위</div></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="wrap">
+      <section class="sec" id="question">
+        <div class="sec-label"><span class="label">01</span><h2>Question</h2></div>
+        <div class="sec-body">
+          <ul class="list">
+            <li>감쇠 맵(attenuation map)은 워터마크 잔차의 픽셀별 세기를 결정</li>
+            <li><b>학습형</b> 맵이 <b>고정 JND</b> 맵보다 품질–강건성 trade-off가 좋은가?</li>
+            <li>삽입 계수가 아니라 <b>왜곡(PSNR)</b>을 같게 맞춰도 이점이 유지되는가?</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="sec" id="method">
+        <div class="sec-label"><span class="label">02</span><h2>Method</h2></div>
+        <div class="sec-body">
+          <figure>
+            <div class="frame"><img src="../assets/img/wm_overview.webp" alt="고정 JND 또는 학습형 감쇠 맵으로 워터마크 잔차를 픽셀별로 조절하는 구조" width="2460" height="1043" loading="lazy"></div>
+            <figcaption>개요 — 고정된 Pixel Seal embedder가 만든 잔차 w를 감쇠 맵 M(x)로 조절: 고정 JND(x) 또는 학습형 Aφ(x)</figcaption>
+          </figure>
+          <ul class="list">
+            <li>Pixel Seal embedder · extractor <b>고정</b>, U-Net이 감쇠 맵 예측</li>
+            <li><b>SAA</b> (Shape-Aligned Attenuation): 평균 정규화한 학습 맵을 JND 맵 형태에 정렬</li>
+            <li>선택적 <b>LPIPS</b> 지각 손실</li>
+            <li>공격: JPEG + crop + brightness 복합</li>
+            <li>비교 조건: 같은 계수 · 같은 PSNR · 같은 강건성</li>
+            <li>SA-1B 1,000장 · 시드 3개 · paired bootstrap 신뢰구간</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="sec" id="findings">
+        <div class="sec-label"><span class="label">03</span><h2>Findings</h2></div>
+        <div class="sec-body">
+          <figure>
+            <div class="frame"><img src="../assets/img/wm_isopsnr.webp" alt="PSNR을 맞춘 조건에서 다섯 가지 감쇠 방식의 복합 공격 비트 정확도와 LPIPS 비교 그래프" width="2400" height="946" loading="lazy"></div>
+            <figcaption>PSNR 일치 비교 (SA-1B, n=1000) — (a) 복합 공격 비트 정확도, (b) LPIPS. Native = 고정 JND</figcaption>
+          </figure>
+          <div class="tbl">
+            <table>
+              <thead><tr><th class="l">비교 조건</th><th class="l">결과</th></tr></thead>
+              <tbody>
+                <tr><td class="l">같은 삽입 계수</td><td class="l">기본 학습 맵: 비트 정확도 <b>+3.81%p</b>, PSNR <b>−5.37 dB</b></td></tr>
+                <tr><td class="l">+ LPIPS + SAA</td><td class="l">정확도 0.31%p 손해로 PSNR <b>+2.05 dB</b> 회복</td></tr>
+                <tr class="best"><td class="l">같은 PSNR</td><td class="l">이점 소멸, 고정 JND가 <b>0.36–0.38%p</b> 우위 (최고 목표치 제외)</td></tr>
+                <tr><td class="l">학습 맵끼리</td><td class="l">강건성 차이는 SAA에서 발생 (+0.55–2.59%p)</td></tr>
+                <tr><td class="l">같은 강건성</td><td class="l">학습 맵의 LPIPS 이점 대부분 소멸, 고정 JND가 가장 적은 왜곡</td></tr>
+                <tr><td class="l">MaskWM · WAM · VideoSeal</td><td class="l">PSNR 일치 시 JPEG 공격 격차 <b>1.2%p 미만</b>으로 축소 (VideoSeal은 학습 맵 근소 우위)</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout"><b>결론.</b> 백본을 고정하면 학습형 감쇠 맵은 같은 왜곡에서 강건성도, 같은 강건성에서 품질도 고정 JND보다 뚜렷하게 낫지 않음 → 단일 계수 비교는 효과를 과대평가</div>
+        </div>
+      </section>
+
+      <section class="sec" id="stack">
+        <div class="sec-label"><span class="label">04</span><h2>Stack</h2></div>
+        <div class="sec-body">
+          <div class="tags"><span>PyTorch</span><span>U-Net</span><span>LPIPS</span><span>Pixel Seal</span><span>MaskWM</span><span>WAM</span><span>VideoSeal</span><span>Multi-GPU</span><span>Bootstrap CI</span></div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-foot">
+    <div class="wrap">
+      <a href="../ko.html">← 송창석</a>
+      <a href="learned-attenuation.html" lang="en">English</a>
+    </div>
+  </footer>
+  <script src="../assets/site.js" defer></script>
+</body>
+</html>
